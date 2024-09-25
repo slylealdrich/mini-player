@@ -88,7 +88,7 @@ fn main() {
                     .expect("Error getting buffer from sample");
                 let caps = sample.caps().expect("Error getting caps from sample");
                 let video_info =
-                    gst_video::VideoInfo::from_caps(caps).expect("Error gettings video info");
+                    gst_video::VideoInfo::from_caps(caps).expect("Error getting video info");
                 let video_frame = gst_video::VideoFrame::from_buffer_readable(buffer, &video_info)
                     .expect("Couldn't build video frame");
                 let slint_frame = try_gstreamer_video_frame_to_pixel_buffer(&video_frame)
@@ -177,7 +177,7 @@ fn main() {
                         State::Paused => {
                             playbin_clone
                                 .set_state(State::Playing)
-                                .expect("Error plaing video");
+                                .expect("Error playing video");
                         }
                         State::Playing => {
                             playbin_clone
@@ -264,5 +264,5 @@ fn main() {
         slint::CloseRequestResponse::HideWindow
     });
 
-    app.run().expect("Error occured while running app");
+    app.run().expect("Error occurred while running app");
 }
