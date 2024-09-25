@@ -1,0 +1,29 @@
+[package]
+name = "mini-player"
+version = "1.8.0"
+authors = ["sylealdrich <slylealdrich@gmail.com>"]
+edition = "2021"
+build = "build.rs"
+license = "MIT"
+publish = false
+
+[[bin]]
+path = "main.rs"
+name = "mini-player"
+
+[dependencies]
+slint = "1.8.0"
+anyhow = { version = "1.0" }
+futures = { version = "0.3.28" }
+
+gst = { package = "gstreamer", version = "0.23.1" }
+gst-audio = { package = "gstreamer-audio", version = "0.23.0" }
+gst-video = { package = "gstreamer-video", version = "0.23.0" }
+gst-app = { package = "gstreamer-app", version = "0.23.0" }
+gst-play = { package = "gstreamer-play", version = "0.23.0" }
+clap = { version = "4.5.18", features = ["derive"] }
+i-slint-backend-winit = "1.8.0"
+winit = "0.30.5"
+
+[build-dependencies]
+slint-build = "1.8.0"

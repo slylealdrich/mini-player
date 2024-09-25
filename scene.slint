@@ -1,0 +1,104 @@
+import { VerticalBox, Palette, Button } from "std-widgets.slint";
+
+export component App inherits Window {
+    in property <image> video-frame <=> image.source;
+    in property <bool> playing: true;
+
+    in property <int> video-width: 1;
+    in property <int> video-height: 1;
+
+    pure callback key-pressed(KeyEvent);
+
+    pure callback toggle-state();
+    pure callback replay();
+    pure callback mouse-drag();
+    pure callback seek(int, int);
+
+    property <float> ratio: video-height / video-width;
+
+    in property <float> zoom: 0.2;
+
+    always-on-top: true;
+    no-frame: true;
+
+    width: zoom * (video-width / (video-width / 1920)) * 1px;
+    height: zoom * (video-width / (video-width / 1920)) * ratio * 1px;
+    background: #000000;
+
+    forward-focus: keyboard-focus;
+
+    keyboard-focus := FocusScope {
+        key-pressed(event) => {
+            root.key-pressed(event);
+            return EventResult.accept;
+        }
+    }
+
+    states [
+        shown when controls.has-hover || animation-tick() < 1000ms: {
+            controls.opacity: 1;
+            in {
+                animate controls.opacity { duration: 50ms; }
+            }
+        }
+        hidden when !controls.has-hover: {
+            controls.opacity: 0;
+            in {
+                animate controls.opacity {
+                    delay: 1000ms;
+                    duration: 100ms;
+                }
+            }
+        }
+    ]
+
+    VerticalBox {
+        padding: 0;
+        image := Image {
+            TouchArea {
+                moved => {
+                    root.mouse-drag();
+                }
+            }
+        }
+    }
+
+    controls := TouchArea {
+
+        y: root.height - self.height;
+        height: 20%;
+
+        GridLayout {
+            Row {
+                play_button := Button {
+                    icon: root.playing ? @image-url("pause-solid.svg") : @image-url("play-solid.svg");
+                    clicked => {
+                        root.toggle-state();
+                    }
+                }
+
+                TouchArea {
+                    Rectangle {
+                        background: #00000080;
+                        border-radius: 5px;
+                    }
+
+                    moved => {
+                        root.seek(self.mouse-x / 1px, self.width / 1px);
+                    }
+
+                    clicked => {
+                        root.seek(self.mouse-x / 1px, self.width / 1px);
+                    }
+                }
+
+                replay-button := Button {
+                    icon: @image-url("arrow-rotate-left-solid.svg");
+                    clicked => {
+                        root.replay();
+                    }
+                }
+            }
+        }
+    }
+}
