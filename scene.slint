@@ -1,5 +1,6 @@
 import { VerticalBox, Palette, Button } from "std-widgets.slint";
 
+
 export component App inherits Window {
     in property <image> video-frame <=> image.source;
     in property <bool> playing: true;
@@ -14,16 +15,19 @@ export component App inherits Window {
     pure callback mouse-drag();
     pure callback seek(int, int);
 
-    property <float> ratio: video-height / video-width;
+    property <float> ratio: video-width > video-height ? video-height / video-width : video-width / video-height;
 
     in property <float> zoom: 0.2;
+
+    title: "mini-player";
+    icon: @image-url("play-solid.svg");
 
     always-on-top: true;
     no-frame: true;
 
-    width: zoom * (video-width / (video-width / 1920)) * 1px;
-    height: zoom * (video-width / (video-width / 1920)) * ratio * 1px;
-    background: #000000;
+    width: video-width > video-height ? zoom * (video-width / (video-width / 1920)) * 1px : zoom * (video-height / (video-height / 1080)) * ratio * 1px;
+    height: video-width > video-height ? zoom * (video-width / (video-width / 1920)) * ratio * 1px : zoom * (video-height / (video-height / 1080)) * 1px;
+    background: #00000000;
 
     forward-focus: keyboard-focus;
 
@@ -38,7 +42,7 @@ export component App inherits Window {
         shown when controls.has-hover || animation-tick() < 1000ms: {
             controls.opacity: 1;
             in {
-                animate controls.opacity { duration: 50ms; }
+                animate controls.opacity { duration: 0ms; }
             }
         }
         hidden when !controls.has-hover: {
@@ -64,39 +68,48 @@ export component App inherits Window {
     }
 
     controls := TouchArea {
-
+        height: 20px;
         y: root.height - self.height;
-        height: 20%;
 
-        GridLayout {
-            Row {
-                play_button := Button {
-                    icon: root.playing ? @image-url("pause-solid.svg") : @image-url("play-solid.svg");
-                    clicked => {
-                        root.toggle-state();
-                    }
+        HorizontalLayout {
+            play_button := TouchArea {
+                width: 20px;
+                clicked => {
+                    root.toggle-state();
                 }
 
-                TouchArea {
-                    Rectangle {
-                        background: #00000080;
-                        border-radius: 5px;
-                    }
+                Image {
+                    width: 50%;
+                    height: 50%;
+                    source: root.playing ? @image-url("pause-solid.svg") : @image-url("play-solid.svg");
+                }
+            }
 
-                    moved => {
-                        root.seek(self.mouse-x / 1px, self.width / 1px);
-                    }
-
-                    clicked => {
-                        root.seek(self.mouse-x / 1px, self.width / 1px);
-                    }
+            TouchArea {
+                Rectangle {
+                    background: #00000080;
+                    border-radius: 5px;
                 }
 
-                replay-button := Button {
-                    icon: @image-url("arrow-rotate-left-solid.svg");
-                    clicked => {
-                        root.replay();
-                    }
+                moved => {
+                    root.seek(self.mouse-x / 1px, self.width / 1px);
+                }
+
+                clicked => {
+                    root.seek(self.mouse-x / 1px, self.width / 1px);
+                }
+            }
+
+            replay-button := TouchArea {
+                width: 20px;
+                clicked => {
+                    root.replay();
+                }
+
+                Image {
+                    width: 50%;
+                    height: 50%;
+                    source: @image-url("arrow-rotate-left-solid.svg");
                 }
             }
         }

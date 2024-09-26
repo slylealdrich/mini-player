@@ -4,7 +4,11 @@ use std::{env, thread};
 
 use anyhow::{bail, Result};
 
-use gst::{glib::ControlFlow, prelude::*, ClockTime, SeekFlags, State};
+use gst::{
+    glib::ControlFlow,
+    prelude::*,
+    ClockTime, SeekFlags, State,
+};
 use gst_video::VideoFrameExt;
 
 use clap::{command, Parser};
@@ -18,6 +22,9 @@ struct Args {
 
     #[arg(short, long)]
     zoom: f32,
+
+    #[arg(short, long)]
+    volume: f64,
 }
 
 fn try_gstreamer_video_frame_to_pixel_buffer(
@@ -43,12 +50,14 @@ fn try_gstreamer_video_frame_to_pixel_buffer(
 
 fn main() {
     // Setup Winit for the window backend
-    let _ = slint::platform::set_platform(Box::new(i_slint_backend_winit::Backend::new().unwrap()));
+    slint::platform::set_platform(Box::new(i_slint_backend_winit::Backend::new().unwrap()))
+        .expect("Error setting Winit as backend");
 
     // Parse the arguments
     let args = Args::parse();
     let uri = args.uri;
     let zoom = args.zoom;
+    let volume = args.volume;
 
     // Setup the two loops, one for gstreamer and one for slint
     let app = App::new().unwrap();
@@ -65,6 +74,7 @@ fn main() {
 
     let playbin = gst::ElementFactory::make("playbin3")
         .property("uri", uri)
+        .property("volume", volume)
         .property("video-sink", &appsink)
         .build()
         .expect("Error building playbin");
