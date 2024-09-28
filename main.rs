@@ -2,14 +2,7 @@ slint::include_modules!();
 
 use std::{env, thread};
 
-use anyhow::{bail, Result};
-
-use gst::{
-    glib::ControlFlow,
-    prelude::*,
-    ClockTime, SeekFlags, State,
-};
-use gst_video::VideoFrameExt;
+use gst::{glib::ControlFlow, prelude::*, ClockTime, SeekFlags, State};
 
 use clap::{command, Parser};
 use i_slint_backend_winit::WinitWindowAccessor;
@@ -25,27 +18,6 @@ struct Args {
 
     #[arg(short, long)]
     volume: f64,
-}
-
-fn try_gstreamer_video_frame_to_pixel_buffer(
-    frame: &gst_video::VideoFrame<gst_video::video_frame::Readable>,
-) -> Result<slint::SharedPixelBuffer<slint::Rgb8Pixel>> {
-    match frame.format() {
-        gst_video::VideoFormat::Rgb => {
-            let slint_p_puffer = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::clone_from_slice(
-                &frame.comp_data(0).unwrap(),
-                frame.width(),
-                frame.height(),
-            );
-            Ok(slint_p_puffer)
-        }
-        _ => {
-            bail!(
-                "Cannot convert frame to a slint RGB frame because it is format {}",
-                frame.format().to_str()
-            )
-        }
-    }
 }
 
 fn main() {
@@ -87,6 +59,8 @@ fn main() {
             .build(),
     ));
 
+    let mut slint_p_buffer = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(0, 0);
+
     // The app should update on each new sample
     appsink.set_callbacks({
         let app_weak = app.as_weak();
@@ -101,15 +75,28 @@ fn main() {
                     gst_video::VideoInfo::from_caps(caps).expect("Error getting video info");
                 let video_frame = gst_video::VideoFrame::from_buffer_readable(buffer, &video_info)
                     .expect("Couldn't build video frame");
-                let slint_frame = try_gstreamer_video_frame_to_pixel_buffer(&video_frame)
-                    .expect("Unable to convert the video frame to a slint video frame!");
+
+                if slint_p_buffer.width() != video_info.width()
+                    || slint_p_buffer.height() != video_info.height()
+                {
+                    slint_p_buffer = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::new(
+                        video_info.width(),
+                        video_info.height(),
+                    );
+                }
+
+                slint_p_buffer
+                    .make_mut_bytes()
+                    .copy_from_slice(video_frame.comp_data(0).unwrap());
+
+                let slint_p_buffer_clone = slint_p_buffer.clone();
 
                 app_weak
                     .upgrade_in_event_loop(move |app| {
                         app.set_zoom(zoom);
                         app.set_video_width(video_info.width().try_into().unwrap());
                         app.set_video_height(video_info.height().try_into().unwrap());
-                        app.set_video_frame(slint::Image::from_rgb8(slint_frame));
+                        app.set_video_frame(slint::Image::from_rgb8(slint_p_buffer_clone));
                     })
                     .expect("Error updating app in event loop");
                 Ok(gst::FlowSuccess::Ok)
