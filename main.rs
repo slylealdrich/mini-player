@@ -28,12 +28,12 @@ fn try_gstreamer_video_frame_to_pixel_buffer(
 ) -> Result<slint::SharedPixelBuffer<slint::Rgb8Pixel>> {
     match frame.format() {
         gst_video::VideoFormat::Rgb => {
-            let slint_p_puffer = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::clone_from_slice(
+            let slint_p_buffer = slint::SharedPixelBuffer::<slint::Rgb8Pixel>::clone_from_slice(
                 &frame.comp_data(0).unwrap(),
                 frame.width(),
                 frame.height(),
             );
-            Ok(slint_p_puffer)
+            Ok(slint_p_buffer)
         }
         _ => {
             bail!(
