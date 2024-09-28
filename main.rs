@@ -4,7 +4,7 @@ use std::thread;
 
 use anyhow::{bail, Result};
 
-use gst::{glib::ControlFlow, prelude::*, ClockTime, SeekFlags, State};
+use gst::{format::Percent, glib::ControlFlow, prelude::*, ClockTime, SeekFlags, State};
 use gst_video::VideoFrameExt;
 
 use clap::{command, Parser};
@@ -86,6 +86,7 @@ fn main() {
     // The app should update on each new sample
     appsink.set_callbacks({
         let app_weak = app.as_weak();
+        let playbin_clone = playbin.clone();
         gst_app::AppSinkCallbacks::builder()
             .new_sample(move |appsink| {
                 let sample = appsink.pull_sample().map_err(|_| gst::FlowError::Eos)?;
@@ -100,12 +101,17 @@ fn main() {
                 let slint_frame = try_gstreamer_video_frame_to_pixel_buffer(&video_frame)
                     .expect("Unable to convert the video frame to a slint video frame!");
 
+                let position: Percent = playbin_clone
+                    .query_position()
+                    .expect("Error querying position");
+
                 app_weak
                     .upgrade_in_event_loop(move |app| {
                         app.set_zoom(zoom);
                         app.set_video_width(video_info.width().try_into().unwrap());
                         app.set_video_height(video_info.height().try_into().unwrap());
                         app.set_video_frame(slint::Image::from_rgb8(slint_frame));
+                        app.set_position(position.ratio());
                     })
                     .expect("Error updating app in event loop");
                 Ok(gst::FlowSuccess::Ok)
@@ -242,9 +248,14 @@ fn main() {
     app.on_seek({
         let playbin_clone = playbin.clone();
         move |num, denom| {
+            if num < 0 || num >= denom || denom <= 0 {
+                return;
+            }
             let duration: ClockTime = playbin_clone.query_duration().unwrap();
-            let seek_time =
-                duration.mul_div_round(u64::try_from(num).unwrap(), u64::try_from(denom).unwrap());
+            let seek_time = duration.mul_div_round(
+                u64::try_from(num).expect("Error with num while seeking"),
+                u64::try_from(denom).expect("Error with denom while seeking"),
+            );
             playbin_clone
                 .seek_simple(SeekFlags::FLUSH, seek_time)
                 .expect("Error seeking video");

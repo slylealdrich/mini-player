@@ -8,6 +8,8 @@ export component App inherits Window {
     in property <int> video-width: 1;
     in property <int> video-height: 1;
 
+    in property <float> position;
+
     pure callback key-pressed(KeyEvent);
 
     pure callback toggle-state();
@@ -72,10 +74,18 @@ export component App inherits Window {
         y: root.height - self.height;
 
         HorizontalLayout {
+            spacing: 2px;
             play_button := TouchArea {
                 width: 20px;
                 clicked => {
                     root.toggle-state();
+                }
+
+                Rectangle {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 5px;
+                    background: #ffffff80;
                 }
 
                 Image {
@@ -85,10 +95,19 @@ export component App inherits Window {
                 }
             }
 
-            TouchArea {
+            seeker := TouchArea {
                 Rectangle {
                     background: #00000080;
                     border-radius: 5px;
+
+                    Rectangle {
+                        height: 100%;
+                        width: 5px;
+                        background: #ffffff80;
+                        border-radius: 2px;
+
+                        x: position * parent.width - (self.width / 2);
+                    }
                 }
 
                 moved => {
@@ -104,6 +123,13 @@ export component App inherits Window {
                 width: 20px;
                 clicked => {
                     root.replay();
+                }
+
+                Rectangle {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 5px;
+                    background: #ffffff80;
                 }
 
                 Image {
