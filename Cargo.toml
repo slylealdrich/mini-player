@@ -1,5 +1,5 @@
 [package]
-name = "mini-player"
+name = "mini-player-gst"
 version = "1.8.0"
 authors = ["sylealdrich <slylealdrich@gmail.com>"]
 edition = "2021"
@@ -9,7 +9,7 @@ publish = false
 
 [[bin]]
 path = "main.rs"
-name = "mini-player"
+name = "mini-player-gst"
 
 [dependencies]
 slint = "1.8.0"
